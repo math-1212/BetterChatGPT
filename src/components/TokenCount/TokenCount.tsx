@@ -10,17 +10,23 @@ const TokenCount = React.memo(() => {
   const generating = useStore((state) => state.generating);
   const messages = useStore(
     (state) =>
-      state.chats ? state.chats[state.currentChatIndex].messages : [],
+      state.chats ? state.chats[state.currentChatIndex]?.messages : [],
     shallow
   );
 
+  // Remplacer le modèle par défaut par 'gpt-4o'
   const model = useStore((state) =>
     state.chats
-      ? state.chats[state.currentChatIndex].config.model
-      : 'gpt-3.5-turbo'
+      ? state.chats[state.currentChatIndex]?.config?.model || 'gpt-4o'
+      : 'gpt-4o'
   );
 
   const cost = useMemo(() => {
+    if (!modelCost[model]) {
+      console.error(`Le modèle ${model} n'a pas de coût défini.`);
+      return '0.00';
+    }
+
     const price =
       modelCost[model].prompt.price *
       (tokenCount / modelCost[model].prompt.unit);
@@ -28,8 +34,8 @@ const TokenCount = React.memo(() => {
   }, [model, tokenCount]);
 
   useEffect(() => {
-    if (!generating) setTokenCount(countTokens(messages, model));
-  }, [messages, generating]);
+    if (!generating && model) setTokenCount(countTokens(messages, model));
+  }, [messages, generating, model]);
 
   return (
     <div className='absolute top-[-16px] right-0'>
